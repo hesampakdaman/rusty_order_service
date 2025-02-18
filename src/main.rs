@@ -1,7 +1,7 @@
 use chrono::prelude::*;
 use rusty_order_service::{
     adapters::MemoryRepository,
-    domain::models::{self, order::Created, Order},
+    domain::models::{self, Order},
     ports::Repository,
 };
 use uuid::Uuid;
@@ -27,8 +27,9 @@ async fn main() {
     // let order = order.confirm(Utc::now());
 
     // Save the order using the repository.
-    repo.save(order).await.expect("Failed to save order");
-    let order: Order<Created> = repo.find(&id).await.unwrap();
-
-    println!("Order saved successfully!");
+    repo.save(order.into()).await.expect("Failed to save order");
+    match repo.get(&id).await.unwrap() {
+        models::order::OrderVariant::Created(_) => println!("Order was created"),
+        _ => panic!("Something went wrong"),
+    };
 }

@@ -1,21 +1,12 @@
-use crate::domain::{self, models::Order};
+use crate::domain::{self, models::order::OrderVariant};
 use async_trait::async_trait;
 use uuid::Uuid;
 
 #[async_trait]
-pub trait Repository {
-    /// The concrete storage representation.
-    type StorageOrder;
-
+pub trait Repository: Sync {
     /// Persists an order to the underlying storage.
-    async fn save<T>(&self, order: Order<T>) -> Result<(), domain::Error>
-    where
-        T: Send,
-        Order<T>: Into<Self::StorageOrder> + Send;
+    async fn save(&self, order: OrderVariant) -> Result<(), domain::Error>;
 
     /// Retrieves an order by its ID.
-    async fn find<T>(&self, id: &Uuid) -> Result<Order<T>, domain::Error>
-    where
-        T: Send,
-        Order<T>: Send + TryFrom<Self::StorageOrder, Error = domain::Error>;
+    async fn get(&self, id: &Uuid) -> Result<OrderVariant, domain::Error>;
 }
