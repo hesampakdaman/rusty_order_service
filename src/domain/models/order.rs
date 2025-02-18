@@ -146,3 +146,46 @@ impl Order<Shipped> {
         self.state.shipped_at
     }
 }
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum OrderVariant {
+    Created(Order<Created>),
+    Confirmed(Order<Confirmed>),
+    Shipped(Order<Shipped>),
+    Cancelled(Order<Cancelled>),
+}
+
+impl OrderVariant {
+    pub fn id(&self) -> Uuid {
+        match self {
+            OrderVariant::Created(order) => order.id,
+            OrderVariant::Confirmed(order) => order.id,
+            OrderVariant::Shipped(order) => order.id,
+            OrderVariant::Cancelled(order) => order.id,
+        }
+    }
+}
+
+impl From<Order<Created>> for OrderVariant {
+    fn from(order: Order<Created>) -> Self {
+        OrderVariant::Created(order)
+    }
+}
+
+impl From<Order<Confirmed>> for OrderVariant {
+    fn from(order: Order<Confirmed>) -> Self {
+        OrderVariant::Confirmed(order)
+    }
+}
+
+impl From<Order<Shipped>> for OrderVariant {
+    fn from(order: Order<Shipped>) -> Self {
+        OrderVariant::Shipped(order)
+    }
+}
+
+impl From<Order<Cancelled>> for OrderVariant {
+    fn from(order: Order<Cancelled>) -> Self {
+        OrderVariant::Cancelled(order)
+    }
+}
