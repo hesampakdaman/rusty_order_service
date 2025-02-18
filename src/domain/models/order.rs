@@ -1,37 +1,37 @@
-use crate::domain::models::item::Item;
+use super::LineItem;
 use crate::domain::Error;
 use chrono::{DateTime, Utc};
 use uuid::Uuid;
 
 /// The core Order aggregate is generic over its state, which defaults to `Created`.
-#[derive(Debug)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Order<State = Created> {
     pub id: Uuid,
-    pub items: Vec<Item>,
+    pub line_items: Vec<LineItem>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
     pub state: State,
 }
 
 /// Marker type for an order that is still open for modifications.
-#[derive(Debug)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Created;
 
 /// Marker type for an order that has been confirmed (items are frozen).
-#[derive(Debug)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Confirmed {
     pub confirmed_at: DateTime<Utc>,
 }
 
 /// Marker type for an order that has been cancelled.
-#[derive(Debug)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Cancelled {
     pub cancelled_at: DateTime<Utc>,
 }
 
 /// Marker type for an order that has been shipped.
 /// It carries the confirmed timestamp, shipped timestamp, and a tracking ID.
-#[derive(Debug)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Shipped {
     pub confirmed_at: DateTime<Utc>,
     pub shipped_at: DateTime<Utc>,
@@ -42,13 +42,13 @@ impl Order<Created> {
     /// Creates a new order in the Created state.
     ///
     /// Returns an error if the `items` vector is empty.
-    pub fn new(id: Uuid, items: Vec<Item>, now: DateTime<Utc>) -> Result<Self, Error> {
+    pub fn new(id: Uuid, items: Vec<LineItem>, now: DateTime<Utc>) -> Result<Self, Error> {
         if items.is_empty() {
             Err(Error::EmptyOrder)
         } else {
             Ok(Self {
                 id,
-                items,
+                line_items: items,
                 created_at: now,
                 updated_at: now,
                 state: Created,
@@ -58,18 +58,16 @@ impl Order<Created> {
 
     /// Adds an item to the order.
     /// Updates the `updated_at` timestamp.
-    pub fn add_item(mut self, item: Item, now: DateTime<Utc>) -> Self {
-        self.items.push(item);
+    pub fn add_item(&mut self, item: LineItem, now: DateTime<Utc>) {
+        self.line_items.push(item);
         self.updated_at = now;
-        self
     }
 
     /// Removes an item from the order by its ID.
     /// Updates the `updated_at` timestamp.
-    pub fn remove_item(mut self, item_id: Uuid, now: DateTime<Utc>) -> Self {
-        self.items.retain(|i| i.id != item_id);
+    pub fn remove_item(&mut self, item_id: Uuid, now: DateTime<Utc>) {
+        self.line_items.retain(|i| i.id != item_id);
         self.updated_at = now;
-        self
     }
 
     /// Confirms the order, transitioning it to the Confirmed state.
@@ -77,7 +75,7 @@ impl Order<Created> {
     pub fn confirm(self, confirmed_at: DateTime<Utc>) -> Order<Confirmed> {
         Order {
             id: self.id,
-            items: self.items,
+            line_items: self.line_items,
             created_at: self.created_at,
             updated_at: self.updated_at,
             state: Confirmed { confirmed_at },
@@ -88,7 +86,7 @@ impl Order<Created> {
     pub fn cancel(self, cancelled_at: DateTime<Utc>) -> Order<Cancelled> {
         Order {
             id: self.id,
-            items: self.items,
+            line_items: self.line_items,
             created_at: self.created_at,
             updated_at: self.updated_at,
             state: Cancelled { cancelled_at },
@@ -101,7 +99,7 @@ impl Order<Confirmed> {
     pub fn ship(self, shipped_at: DateTime<Utc>, tracking_id: String) -> Order<Shipped> {
         Order {
             id: self.id,
-            items: self.items,
+            line_items: self.line_items,
             created_at: self.created_at,
             updated_at: self.updated_at,
             state: Shipped {
@@ -112,11 +110,15 @@ impl Order<Confirmed> {
         }
     }
 
+    pub fn confirmed_at(&self) -> DateTime<Utc> {
+        self.state.confirmed_at
+    }
+
     /// Cancels the confirmed order, transitioning it to the Cancelled state.
     pub fn cancel(self, cancelled_at: DateTime<Utc>) -> Order<Cancelled> {
         Order {
             id: self.id,
-            items: self.items,
+            line_items: self.line_items,
             created_at: self.created_at,
             updated_at: self.updated_at,
             state: Cancelled { cancelled_at },
@@ -124,13 +126,23 @@ impl Order<Confirmed> {
     }
 }
 
+impl Order<Cancelled> {
+    pub fn cancelled_at(&self) -> DateTime<Utc> {
+        self.state.cancelled_at
+    }
+}
+
 impl Order<Shipped> {
     /// Returns the tracking ID for the shipped order.
-    pub fn tracking_id(&self) -> &str {
-        &self.state.tracking_id
+    pub fn tracking_id(&self) -> String {
+        self.state.tracking_id.to_string()
     }
 
-    pub fn confirmed_at(&self) -> &DateTime<Utc> {
-        &self.state.confirmed_at
+    pub fn confirmed_at(&self) -> DateTime<Utc> {
+        self.state.confirmed_at
+    }
+
+    pub fn shipped_at(&self) -> DateTime<Utc> {
+        self.state.shipped_at
     }
 }
