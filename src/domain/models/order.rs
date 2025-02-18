@@ -58,15 +58,15 @@ impl Order<Created> {
 
     /// Adds an item to the order.
     /// Updates the `updated_at` timestamp.
-    pub fn add_item(&mut self, item: LineItem, now: DateTime<Utc>) {
+    pub fn add_line_item(&mut self, item: LineItem, now: DateTime<Utc>) {
         self.line_items.push(item);
         self.updated_at = now;
     }
 
     /// Removes an item from the order by its ID.
     /// Updates the `updated_at` timestamp.
-    pub fn remove_item(&mut self, item_id: Uuid, now: DateTime<Utc>) {
-        self.line_items.retain(|i| i.id != item_id);
+    pub fn remove_item(&mut self, item_id: &Uuid, now: DateTime<Utc>) {
+        self.line_items.retain(|i| &i.id != item_id);
         self.updated_at = now;
     }
 
@@ -112,17 +112,6 @@ impl Order<Confirmed> {
 
     pub fn confirmed_at(&self) -> DateTime<Utc> {
         self.state.confirmed_at
-    }
-
-    /// Cancels the confirmed order, transitioning it to the Cancelled state.
-    pub fn cancel(self, cancelled_at: DateTime<Utc>) -> Order<Cancelled> {
-        Order {
-            id: self.id,
-            line_items: self.line_items,
-            created_at: self.created_at,
-            updated_at: self.updated_at,
-            state: Cancelled { cancelled_at },
-        }
     }
 }
 
