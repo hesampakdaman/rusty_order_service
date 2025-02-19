@@ -18,12 +18,12 @@ impl<R: Repository> OrderService<R> {
 
 #[async_trait]
 impl<R: Repository> Service for OrderService<R> {
-    async fn create(&self, items: Vec<LineItem>) -> Result<String, Error> {
+    async fn create(&self, items: Vec<LineItem>) -> Result<Uuid, Error> {
         let id = Uuid::new_v4();
         let now = Utc::now();
         let order = Order::new(id, items, now)?;
         self.repo.save(order.into()).await?;
-        Ok(id.to_string())
+        Ok(id)
     }
 
     async fn add_line_item(&self, order_id: &Uuid, item: LineItem) -> Result<(), Error> {

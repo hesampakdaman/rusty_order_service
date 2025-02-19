@@ -1,35 +1,42 @@
-use chrono::prelude::*;
+use chrono::Utc;
 use rusty_order_service::{
-    adapters::MemoryRepository,
-    domain::models::{self, Order},
-    ports::Repository,
+    adapters::{MemoryRepository, OrderService},
+    domain::models::{order::OrderVariant, LineItem},
+    ports::Service,
 };
 use uuid::Uuid;
 
 #[tokio::main]
 async fn main() {
-    // Create an instance of the repository.
-    let repo = MemoryRepository::new();
-    let id = Uuid::new_v4();
+    let service = OrderService::new(MemoryRepository::new());
 
-    // Create an order in the "Created" state.
-    let order = Order::new(
-        id,
-        vec![models::LineItem {
-            id: Uuid::new_v4(),
-            quantity: 1,
-        }],
-        Utc::now(),
-    )
-    .expect("Failed to create order");
-
-    // Confirm the order.
-    // let order = order.confirm(Utc::now());
-
-    // Save the order using the repository.
-    repo.save(order.into()).await.expect("Failed to save order");
-    match repo.get(&id).await.unwrap() {
-        models::order::OrderVariant::Created(_) => println!("Order was created"),
-        _ => panic!("Something went wrong"),
+    let id = service
+        .create(vec![LineItem::new(Uuid::new_v4(), 1)])
+        .await
+        .expect("Failed to save order");
+    println!("Order with id {id} was created");
+    match service.get(&id).await.unwrap() {
+        OrderVariant::Created(_) => println!("Order {id} was found"),
+        _ => panic!("Order {id} is not in the database"),
     };
+
+    service
+        .add_line_item(&id, LineItem::new(Uuid::new_v4(), 2))
+        .await
+        .expect("Failed to add line item to order {id}");
+    println!("Added line item to Order {id}");
+
+    if let Err(e) = service.ship(&id, Utc::now(), "tracking-id").await {
+        println!("Could not ship Order {id}: {e}");
+    }
+    service
+        .confirm(&id)
+        .await
+        .expect("Failed to confirm Order {id}");
+    println!("Confirmed Order {id}");
+
+    service
+        .ship(&id, Utc::now(), "tracking-id")
+        .await
+        .expect("Failed to ship order");
 }

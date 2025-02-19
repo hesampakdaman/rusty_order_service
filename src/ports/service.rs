@@ -1,5 +1,5 @@
 use crate::domain::models::order::OrderVariant;
-use crate::domain::models::{LineItem, Order};
+use crate::domain::models::LineItem;
 use crate::domain::Error;
 use async_trait::async_trait;
 use chrono::{DateTime, Utc};
@@ -8,7 +8,7 @@ use uuid::Uuid;
 #[async_trait]
 pub trait Service: Sync {
     /// Creates a new order in the Created state and returns its ID.
-    async fn create(&self, items: Vec<LineItem>) -> Result<String, Error>;
+    async fn create(&self, items: Vec<LineItem>) -> Result<Uuid, Error>;
 
     /// Adds a line item to an existing order.
     async fn add_line_item(&self, order_id: &Uuid, item: LineItem) -> Result<(), Error>;
