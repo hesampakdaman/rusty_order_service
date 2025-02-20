@@ -7,7 +7,7 @@ pub struct LineItem {
 }
 
 impl LineItem {
-    pub fn new(id: Uuid, quantity: usize) -> Self  {
+    pub fn new(id: Uuid, quantity: usize) -> Self {
         LineItem { id, quantity }
     }
 }

@@ -1,7 +1,7 @@
 use chrono::Utc;
 use rusty_order_service::{
     adapters::{MemoryRepository, OrderService},
-    domain::models::{order::OrderVariant, LineItem},
+    domain::models::{LineItem, order::OrderVariant},
     ports::Service,
 };
 use uuid::Uuid;

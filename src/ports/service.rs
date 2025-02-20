@@ -1,6 +1,6 @@
-use crate::domain::models::order::OrderVariant;
-use crate::domain::models::LineItem;
 use crate::domain::Error;
+use crate::domain::models::LineItem;
+use crate::domain::models::order::OrderVariant;
 use async_trait::async_trait;
 use chrono::{DateTime, Utc};
 use uuid::Uuid;
