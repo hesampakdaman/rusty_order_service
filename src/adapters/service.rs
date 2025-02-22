@@ -27,40 +27,39 @@ impl<R: Repository> Service for OrderService<R> {
     }
 
     async fn add_line_item(&self, order_id: &Uuid, item: LineItem) -> Result<(), Error> {
-        match self.repo.get(order_id).await? {
-            OrderVariant::Created(mut order) => {
-                order.add_line_item(item, Utc::now());
-                self.repo.save(order.into()).await
-            }
-            _ => Err(Error::InvalidOrderType(format!(
+        if let OrderVariant::Created(mut order) = self.repo.get(order_id).await? {
+            order.add_line_item(item, Utc::now());
+            self.repo.save(order.into()).await
+        } else {
+            Err(Error::InvalidOrderType(format!(
                 "Order {order_id} is not in a modifiable state"
-            ))),
+            )))
         }
     }
 
     async fn remove_line_item(&self, order_id: &Uuid, item_id: &Uuid) -> Result<(), Error> {
-        match self.repo.get(order_id).await? {
-            OrderVariant::Created(mut order) => {
-                order.remove_item(item_id, Utc::now());
+        if let OrderVariant::Created(mut order) = self.repo.get(order_id).await? {
+            order.remove_item(item_id, Utc::now());
 
-                if order.line_items.is_empty() {
-                    return self.repo.save(order.cancel(Utc::now()).into()).await;
-                }
-
-                self.repo.save(order.into()).await
+            if order.line_items.is_empty() {
+                return self.repo.save(order.cancel(Utc::now()).into()).await;
             }
-            _ => Err(Error::InvalidOrderType(format!(
+
+            self.repo.save(order.into()).await
+        } else {
+            Err(Error::InvalidOrderType(format!(
                 "Order {order_id} is not in a modifiable state"
-            ))),
+            )))
         }
     }
 
     async fn confirm(&self, id: &Uuid) -> Result<(), Error> {
-        match self.repo.get(id).await? {
-            OrderVariant::Created(order) => self.repo.save(order.confirm(Utc::now()).into()).await,
-            _ => Err(Error::InvalidOrderType(format!(
+        if let OrderVariant::Created(order) = self.repo.get(id).await? {
+            self.repo.save(order.confirm(Utc::now()).into()).await
+        } else {
+            Err(Error::InvalidOrderType(format!(
                 "Order {id} cannot be confirmed"
-            ))),
+            )))
         }
     }
 
