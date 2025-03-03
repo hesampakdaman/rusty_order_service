@@ -6,7 +6,7 @@ use chrono::{DateTime, Utc};
 use uuid::Uuid;
 
 #[async_trait]
-pub trait Service: Sync {
+pub trait Service: Sync + Send {
     /// Creates a new order in the Created state and returns its ID.
     async fn create(&self, items: Vec<LineItem>) -> Result<Uuid, Error>;
 
