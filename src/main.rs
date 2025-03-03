@@ -1,42 +1,19 @@
-use chrono::Utc;
-use rusty_order_service::{
-    adapters::{MemoryRepository, OrderService},
-    domain::models::{LineItem, order::OrderVariant},
-    ports::Service,
-};
-use uuid::Uuid;
+use axum::{Router, routing::post};
+use rusty_order_service::adapters;
+use std::sync::Arc;
 
 #[tokio::main]
 async fn main() {
-    let service = OrderService::new(MemoryRepository::new());
+    let service = Arc::new(adapters::OrderService::new(
+        adapters::MemoryRepository::new(),
+    ));
 
-    let id = service
-        .create(vec![LineItem::new(Uuid::new_v4(), 1)])
-        .await
-        .expect("Failed to save order");
-    println!("Order with id {id} was created");
-    match service.get(&id).await.unwrap() {
-        OrderVariant::Created(_) => println!("Order {id} was found"),
-        _ => panic!("Order {id} is not in the database"),
-    };
+    let app = Router::new()
+        .route("/orders", post(adapters::http::handlers::create))
+        .with_state(service);
 
-    service
-        .add_line_item(&id, LineItem::new(Uuid::new_v4(), 2))
-        .await
-        .expect("Failed to add line item to order {id}");
-    println!("Added line item to Order {id}");
-
-    if let Err(e) = service.ship(&id, Utc::now(), "tracking-id").await {
-        println!("Could not ship Order {id}: {e}");
-    }
-    service
-        .confirm(&id)
-        .await
-        .expect("Failed to confirm Order {id}");
-    println!("Confirmed Order {id}");
-
-    service
-        .ship(&id, Utc::now(), "tracking-id")
-        .await
-        .expect("Failed to ship order");
+    let addr = "0.0.0.0:3000";
+    let lis = tokio::net::TcpListener::bind(addr).await.unwrap();
+    println!("service started on {addr}");
+    axum::serve(lis, app).await.unwrap();
 }

@@ -1,6 +1,7 @@
+use serde::Deserialize;
 use uuid::Uuid;
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
 pub struct LineItem {
     pub id: Uuid,
     pub quantity: usize,
