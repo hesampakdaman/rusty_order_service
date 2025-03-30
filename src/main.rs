@@ -1,3 +1,4 @@
+use crate::adapters::http;
 use axum::{Router, routing::post};
 use rusty_order_service::adapters;
 use std::sync::Arc;
@@ -9,7 +10,8 @@ async fn main() {
     ));
 
     let app = Router::new()
-        .route("/orders", post(adapters::http::handlers::create))
+        .route("/orders", post(http::handlers::create))
+        .route("/orders/{id}/confirm", post(http::handlers::confirm))
         .with_state(service);
 
     let addr = "0.0.0.0:3000";
