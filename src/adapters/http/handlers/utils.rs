@@ -16,7 +16,7 @@ pub(crate) fn map_domain_error(err: &Error) -> (StatusCode, String) {
             format!("No order found: {}", details),
         ),
         Error::InvalidOrderType(details) => (
-            StatusCode::BAD_REQUEST,
+            StatusCode::CONFLICT,
             format!("Invalid order type: {}", details),
         ),
         Error::MissingField(field) => {

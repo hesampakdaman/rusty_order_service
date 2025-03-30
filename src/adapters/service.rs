@@ -54,12 +54,12 @@ impl<R: Repository> Service for OrderService<R> {
     }
 
     async fn confirm(&self, id: &Uuid) -> Result<(), Error> {
-        if let OrderVariant::Created(order) = self.repo.get(id).await? {
-            self.repo.save(order.confirm(Utc::now()).into()).await
-        } else {
-            Err(Error::InvalidOrderType(format!(
+        match self.repo.get(id).await? {
+            OrderVariant::Created(order) => self.repo.save(order.confirm(Utc::now()).into()).await,
+            OrderVariant::Confirmed(_) => Ok(()),
+            _ => Err(Error::InvalidOrderType(format!(
                 "Order {id} cannot be confirmed"
-            )))
+            ))),
         }
     }
 
