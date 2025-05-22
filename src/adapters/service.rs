@@ -4,20 +4,21 @@ use crate::domain::models::{LineItem, Order};
 use crate::ports::{Repository, Service};
 use async_trait::async_trait;
 use chrono::{DateTime, Utc};
+use std::sync::Arc; // Required for Arc
 use uuid::Uuid;
 
-pub struct OrderService<R: Repository> {
-    repo: R,
+pub struct OrderService { // No longer generic
+    repo: Arc<dyn Repository + Send + Sync>, // Use Arc<dyn Repository>
 }
 
-impl<R: Repository> OrderService<R> {
-    pub fn new(repo: R) -> Self {
+impl OrderService { // No longer generic
+    pub fn new(repo: Arc<dyn Repository + Send + Sync>) -> Self { // Accepts Arc<dyn Repository>
         Self { repo }
     }
 }
 
 #[async_trait]
-impl<R: Repository> Service for OrderService<R> {
+impl Service for OrderService { // No longer generic
     async fn create(&self, items: Vec<LineItem>) -> Result<Uuid, Error> {
         let id = Uuid::new_v4();
         let now = Utc::now();

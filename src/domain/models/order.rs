@@ -1,10 +1,11 @@
 use super::LineItem;
 use crate::domain::Error;
 use chrono::{DateTime, Utc};
+use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 /// The core Order aggregate is generic over its state, which defaults to `Created`.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Order<State = Created> {
     pub id: Uuid,
     pub line_items: Vec<LineItem>,
@@ -14,24 +15,24 @@ pub struct Order<State = Created> {
 }
 
 /// Marker type for an order that is still open for modifications.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Created;
 
 /// Marker type for an order that has been confirmed (items are frozen).
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Confirmed {
     pub confirmed_at: DateTime<Utc>,
 }
 
 /// Marker type for an order that has been cancelled.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Cancelled {
     pub cancelled_at: DateTime<Utc>,
 }
 
 /// Marker type for an order that has been shipped.
 /// It carries the confirmed timestamp, shipped timestamp, and a tracking ID.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Shipped {
     pub confirmed_at: DateTime<Utc>,
     pub shipped_at: DateTime<Utc>,
@@ -136,7 +137,7 @@ impl Order<Shipped> {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum OrderVariant {
     Created(Order<Created>),
     Confirmed(Order<Confirmed>),
